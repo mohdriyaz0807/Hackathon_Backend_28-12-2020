@@ -44,7 +44,7 @@ app.post("/registeruser", async (req, res) => {
             });
 
         let info = await transporter.sendMail({
-                from: `Mohamed Riyaz <${process.env.MAIL_USERNAME}>`, 
+                from: `Pizza Corner <${process.env.MAIL_USERNAME}>`, 
                 to: `${req.body.email}`, 
                 subject: "Verification mail",
                 text: "click to Verify your email and activate your account", 
@@ -131,7 +131,7 @@ app.post("/registeruser", async (req, res) => {
           },
         })
         let info = await transporter.sendMail({
-          from: `Mohamed Riyaz <${process.env.MAIL_USERNAME}>`, 
+          from: `Pizza Corner <${process.env.MAIL_USERNAME}>`, 
           to: `${req.body.email}`, 
           subject: "Password Reset", 
           text: "Reset your password", 
@@ -174,6 +174,76 @@ app.post("/registeruser", async (req, res) => {
   }
   })
 
+  app.post("/registeradmin", async (req, res) => {
+    try {
+      let clientInfo = await mongoClient.connect(dbURL);
+      let db = clientInfo.db("Pizza_Users");
+      let result = await db
+        .collection("Admin")
+        .findOne({ email: req.body.email });
+      if (result) {
+        res.status(400).json({ message: "User already registered" ,icon :'warning'});
+      } else {
+        let salt = await bcrypt.genSalt(15);
+        let hash = await bcrypt.hash(req.body.password, salt);
+        req.body.password = hash;
+
+        let verifyString = (Math.random() * 1e32).toString(36)
+        let transporter = nodemailer.createTransport({
+                host: "smtp.gmail.com",
+                port: 587,
+                secure: false, 
+                auth: {
+                  user: process.env.MAIL_USERNAME, 
+                  pass: process.env.MAIL_PASSWORD, 
+                },
+            });
+
+        let info = await transporter.sendMail({
+                from: `Pizza Corner <${process.env.MAIL_USERNAME}>`, 
+                to: `${req.body.email}`, 
+                subject: "Verification mail",
+                text: "click to Verify your email and activate your account", 
+                html: `<b>Click on the link to verify your email <a href="http://localhost:3000/adminconfirm/${verifyString}"><button type='button'>Click here</button></a></b>`,
+            });
+
+        await db.collection("Admin").insertOne(req.body);
+        await db.collection("Admin").updateOne({"email": req.body.email},
+        {$set: {verifystring: verifyString}})
+        res.status(200).json({ message: "Check your mail for activation link" ,icon :'success' });
+        clientInfo.close();
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  })
+
+  app.get('/adminconfirm/:verifyString', async (req, res) => {
+    try {
+        let clientInfo = await mongoClient.connect(dbURL)
+        let db = clientInfo.db("Pizza_Users")
+        let result = await db.collection("Admin").findOne({ verifystring: req.params.verifyString})
+        if (result) {
+                await db.collection("Admin").updateOne({
+                    verifystring: req.params.verifyString
+                }, {
+                    $set: {
+                        status: true,
+                        verifystring: ''
+                    }
+                })
+                res.send('<h1>Your account is activated. Now go to Login Page.</h1>')
+                // res.redirect('https://url-shortener-frontend-jwt.netlify.app')
+                clientInfo.close()
+        } else {
+            res.send('<h1>Link has expired</h1>')
+            clientInfo.close()
+        }
+    } catch (error) {
+        console.log(error)
+    }
+})
+
   app.post("/adminlogin", async (req, res) => {
     try {
       let clientInfo = await mongoClient.connect(dbURL);
@@ -198,6 +268,68 @@ app.post("/registeruser", async (req, res) => {
     }
   })
 
+  app.post('/admin/forgotpassword',async (req,res)=>{
+    try {
+      let clientInfo = await mongoClient.connect(dbURL);
+      let db = clientInfo.db("Pizza_Users");
+      let result = await db.collection("Admin").findOne({ email: req.body.email })
+
+      if (result) {
+        let random=(Math.random()*1e32).toString(36)
+
+        let transporter = nodemailer.createTransport({
+          host: "smtp.gmail.com",
+          port: 587,
+          secure: false, 
+          auth: {
+            user: process.env.MAIL_USERNAME, 
+            pass: process.env.MAIL_PASSWORD, 
+          },
+        })
+        let info = await transporter.sendMail({
+          from: `Pizza Corner <${process.env.MAIL_USERNAME}>`, 
+          to: `${req.body.email}`, 
+          subject: "Password Reset", 
+          text: "Reset your password", 
+          html: `<b>Click below to reset your password</b><br> <a href='#?random=${random}'>Reset</a>`
+        })
+        await db.collection("Admin").updateOne({ email: req.body.email },{$set:{'randomstring':random}});
+        res.status(200).json({message: `Thanks! Please check ${req.body.email} for a link to reset your password.`,icon:'success'});
+        clientInfo.close()
+      }
+      else{
+        res.status(400).json({message: "User doesn't exists",icon:'warning'});
+      }
+    }
+    catch(err){
+      console.log(err);
+    }
+  })
+
+  app.post('/admin/reset',async(req,res)=>{
+    try {
+      let clientInfo = await mongoClient.connect(dbURL);
+      let db = clientInfo.db("Pizza_Users");
+      let result = await db.collection("Admin").findOne({randomstring : req.body.randomstring})
+      if(result){
+        let salt = await bcrypt.genSalt(15);
+        let password = await bcrypt.hash(req.body.password, salt);
+        await db.collection("Admin").updateOne({
+        randomstring: req.body.randomstring}, {$set: {
+                    randomstring: '',
+                    password: password
+                }})
+        res.status(200).json({message: "Password Changed successfully" ,icon :'success'});
+        clientInfo.close();
+      }else{
+        res.status(410).json({message: "some error in page" ,icon :'error'});
+      }
+  }
+  catch(err){
+    console.log(err);
+  }
+  })
+
   app.get('/dashboard/:id',auth, async (req, res) => {
     try {
         let clientInfo = await mongoClient.connect(dbURL)
@@ -214,12 +346,6 @@ app.post("/registeruser", async (req, res) => {
         console.log(error)
     }
 })
-
-
-
-
-
-
 
 
 
