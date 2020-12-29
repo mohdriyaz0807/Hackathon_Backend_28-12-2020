@@ -203,7 +203,7 @@ app.post("/registeruser", async (req, res) => {
                 to: `${req.body.email}`, 
                 subject: "Verification mail",
                 text: "click to Verify your email and activate your account", 
-                html: `<b>Click on the link to verify your email <a href="https://pizza-apps-frontend.netlify.app/Strings/=${verifyString}"><button type='button'>Click here</button></a></b>`,
+                html: `<b>Click on the link to verify your email <a href="https://pizza-apps-frontend.netlify.app/Strings/${verifyString}"><button type='button'>Click here</button></a></b>`,
             });
 
         await db.collection("Admin").insertOne(req.body);
@@ -289,7 +289,7 @@ app.post("/registeruser", async (req, res) => {
           to: `${req.body.email}`, 
           subject: "Password Reset", 
           text: "Reset your password", 
-          html: `<b>Click below to reset your password</b><br> <a href='https://pizza-apps-frontend.netlify.app/ResetPassword/admin/random=${random}'>Reset</a>`
+          html: `<b>Click below to reset your password</b><br> <a href='https://pizza-apps-frontend.netlify.app/ResetPassword/admin/${random}'>Reset</a>`
         })
         await db.collection("Admin").updateOne({ email: req.body.email },{$set:{'randomstring':random}});
         res.status(200).json({message: `Thanks! Please check ${req.body.email} for a link to reset your password.`,icon:'success'});
