@@ -76,10 +76,10 @@ app.post("/registeruser", async (req, res) => {
                         verifystring: ''
                     }
                 })
-                res.send('<h1>Your account is activated ,click below to Login</h1><br><a href="https://pizza-apps-frontend.netlify.app/ogin">https://pizza-apps-frontend.netlify.app/ogin</a>')
+                res.send({message:'Your account is activated ,click below to Login',url:"https://pizza-apps-frontend.netlify.app/login"})
                 clientInfo.close()
         } else {
-            res.send('<h1>Link has expired</h1>')
+            res.send({message:"Link has expired"})
             clientInfo.close()
         }
     } catch (error) {
@@ -231,11 +231,11 @@ app.post("/registeruser", async (req, res) => {
                         verifystring: ''
                     }
                 })
-                res.send('<h1>Your account is activated ,click below to Login</h1><br><a href="https://pizza-apps-frontend.netlify.app/admin">https://pizza-apps-frontend.netlify.app/admin</a>')
+                res.send({message:'Your account is activated ,click below to Login',url:"https://pizza-apps-frontend.netlify.app/admin"})
                 clientInfo.close()
         } else {
-            res.send('<h1>Link has expired</h1>')
-            clientInfo.close()
+          res.send({message:"Link has expired"})
+          clientInfo.close()
         }
     } catch (error) {
         console.log(error)
