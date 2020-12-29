@@ -76,7 +76,7 @@ app.post("/registeruser", async (req, res) => {
                         verifystring: ''
                     }
                 })
-                res.redirect('https://pizza-apps-frontend.netlify.app/login')
+                res.send('<h1>Your account is activated ,click below to Login</h1><br><a href="https://pizza-apps-frontend.netlify.app/ogin">https://pizza-apps-frontend.netlify.app/ogin</a>')
                 clientInfo.close()
         } else {
             res.send('<h1>Link has expired</h1>')
@@ -231,7 +231,7 @@ app.post("/registeruser", async (req, res) => {
                         verifystring: ''
                     }
                 })
-                res.redirect('https://pizza-apps-frontend.netlify.app/admin')
+                res.send('<h1>Your account is activated ,click below to Login</h1><br><a href="https://pizza-apps-frontend.netlify.app/admin">https://pizza-apps-frontend.netlify.app/admin</a>')
                 clientInfo.close()
         } else {
             res.send('<h1>Link has expired</h1>')
