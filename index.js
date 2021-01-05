@@ -14,7 +14,7 @@ const objectId = mongodb.ObjectID
 
 const app = express();
 const dbURL = process.env.DB_URL ||"mongodb://127.0.0.1:27017";
-const port = process.env.PORT || 3000
+const port = process.env.PORT || 4000
 app.use(cors())
 app.use(express.json());
 
@@ -328,24 +328,24 @@ app.post("/registeruser", async (req, res) => {
   }
   })
 
-  app.get('/dashboard/:id',auth, async (req, res) => {
-    try {
-        let clientInfo = await mongoClient.connect(dbURL)
-        let db = clientInfo.db('Pizza_Users')
-        let result = await db.collection('Customer').findOne({
-            _id: objectId(req.params.id)
-        })
-        if (result) {
-            res.status(200).json(result)
-        } else {
-            res.send('<h1>Link has expired</h1>')
-        }
-    } catch (error) {
-        console.log(error)
-    }
+
+app.get('/yourorders/:id', async (req, res) => {
+  try {
+      let clientInfo = await mongoClient.connect(dbURL)
+      let db = clientInfo.db('Pizza_Users')
+      let result = await db.collection('CustomerOrder').findOne({
+          _id: objectId(req.params.id)
+      })
+      if (result) {
+          res.status(200).json(result)
+          clientInfo.close()
+      } else {
+        res.status(400).json({message: "No data found",icon:'warning'});
+      }
+  } catch (error) {
+      console.log(error)
+  }
 })
-
-
 
 
 
