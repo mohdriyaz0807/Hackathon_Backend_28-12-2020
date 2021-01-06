@@ -342,7 +342,7 @@ app.get('/yourorders/:id', async (req, res) => {
           clientInfo.close()
       } else {
         res.status(400).json({message: "No data found",icon:'warning'});
-        console.log(result);
+        console.log({message: "No data found",icon:'warning'});
       }
   } catch (error) {
       console.log(error)
