@@ -333,7 +333,7 @@ app.get('/yourorders/:id', async (req, res) => {
   try {
       let clientInfo = await mongoClient.connect(dbURL)
       let db = clientInfo.db('Pizza_Users')
-      let result = await db.collection('CustomerOrder').findOne({
+      let result = await db.collection('Customer').findOne({
           _id: objectId(req.params.id)
       })
       if (result) {
@@ -342,13 +342,29 @@ app.get('/yourorders/:id', async (req, res) => {
           clientInfo.close()
       } else {
         res.status(400).json({message: "No data found",icon:'warning'});
-        console.log({message: "No data found",icon:'warning'});
       }
   } catch (error) {
       console.log(error)
   }
 })
 
-
+app.post('/makeorder/:id',async (req,res)=>{
+  try{
+    let clientInfo = await mongoClient.connect(dbURL)
+      let db = clientInfo.db('Pizza_Users')
+      let result = await db.collection('Customer').findOne({
+        _id: objectId(req.params.id)
+    })
+      if(result){
+      await db.collection("Customer").updateOne({
+        _id: objectId(req.params.id)},
+        {$push:{orders:req.body}})
+      }
+      res.status(200).json({message: "Added successfully" ,icon :'success'});
+    }
+    catch(error){
+      console.log(error);
+    }
+})
 
 app.listen(port, () => console.log("your app runs with port:",port));
