@@ -358,13 +358,33 @@ app.post('/makeorder/:id',async (req,res)=>{
       if(result){
       await db.collection("Customer").updateOne({
         _id: objectId(req.params.id)},
-        {$push:{orders:req.body}})
+        {$push:{orders:{_id:new ObjectID(),orderItems:req.body}}})
       }
       res.status(200).json({message: "Added successfully" ,icon :'success'});
     }
     catch(error){
       console.log(error);
     }
+})
+
+app.put('/update/:id/:orderid',async (req,res)=>{
+  try{
+    let clientInfo = await mongoClient.connect(dbURL)
+      let db = clientInfo.db('Pizza_Users')
+      let result = await db.collection('Customer').findOne({
+        _id: objectId(req.params.id)
+    })
+      if(result.data.orders._id==objectId(req.params.orderid)){
+      await db.collection("Customer").updateOne({
+        _id: objectId(req.params.id)},
+        {$pull:{orders:{_id:objectId(req.params.orderid)}}
+      })
+      res.status(200).json({message: "Deleted successfully" ,icon :'success'});
+  }
+}
+catch(error){
+  console.log(error);
+}
 })
 
 app.listen(port, () => console.log("your app runs with port:",port));
