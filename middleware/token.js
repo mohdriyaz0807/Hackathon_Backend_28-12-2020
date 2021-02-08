@@ -13,11 +13,7 @@ if(req.headers.authorization!==undefined){
     }
 else{
     res.status(404).json({
-        message:"token not authorized",icon:'warning'
-    })
-    swal({
-        title:'INVALID TOKEN',
-        icon:'error'
+        message:"token not authorized",icon:'error'
     })
 }
 }

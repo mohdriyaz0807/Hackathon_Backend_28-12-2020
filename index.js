@@ -5,11 +5,14 @@ const nodemailer = require("nodemailer")
 const bcrypt=require('bcrypt')
 const jwt = require('jsonwebtoken')
 const auth = require('./middleware/token')
+const Razorpay = require('razorpay');
 
-require('dotenv').config()
+
+require('dotenv').config() 
 
 const mongoClient = mongodb.MongoClient;
 const objectId = mongodb.ObjectID
+const newObjectId = mongodb.ObjectID()
 
 
 const app = express();
@@ -17,12 +20,11 @@ const dbURL = process.env.DB_URL ||"mongodb://127.0.0.1:27017";
 const port = process.env.PORT || 4000
 app.use(cors())
 app.use(express.json());
-app.use((req,res,next)=>{
-  res.header("Access-Control-Allow-Origin","*")
-  res.header("Access-Control-Allow-Methods","GET,PUT,POST,DELETE")
-  res.header("Access-Control-Allow-Headers","Origin,X-Requested-With,Content-Type,Accept")
-  next()
-})
+
+const instance = new Razorpay({
+  key_id: process.env.RAZOR_PAY_KEY_ID,
+  key_secret: process.env.RAZOR_PAY_KEY_SECRET,
+});
 
 app.post("/registeruser", async (req, res) => {
     try {
@@ -30,9 +32,10 @@ app.post("/registeruser", async (req, res) => {
       let db = clientInfo.db("Pizza_Users");
       let result = await db
         .collection("Customer")
-        .findOne({ email: req.body.email });
+        .findOne({ email: req.body.email })
       if (result) {
-        res.status(400).json({ message: "User already registered" ,icon :'warning'});
+        res.json({ message: "User already registered" ,icon :'warning'});
+        console.log(res);
       } else {
         let salt = await bcrypt.genSalt(15);
         let hash = await bcrypt.hash(req.body.password, salt);
@@ -103,7 +106,7 @@ app.post("/registeruser", async (req, res) => {
       if (result) {
         let isTrue = await bcrypt.compare(req.body.password, result.password);
         if (isTrue) {
-          let token = await jwt.sign({"userid":result._id,"username":result.username},process.env.TOKEN_PASS)
+          let token = await jwt.sign({"userid":result._id,"username":result.username},process.env.TOKEN_PASS,{expiresIn:'1h'})
           res.status(200).json({ message: "Logged in successfully",result ,token,icon :'success'})
           clientInfo.close();
         } else {
@@ -258,7 +261,7 @@ app.post("/registeruser", async (req, res) => {
       if (result) {
         let isTrue = await bcrypt.compare(req.body.password, result.password);
         if (isTrue) {
-          let token = await jwt.sign({"userid":result._id,"username":result.username},process.env.TOKEN_PASS)
+          let token = jwt.sign({"username":result.username},process.env.TOKEN_PASS,{expiresIn:'1h'})
           res.status(200).json({ message: "Logged in successfully",result ,token,icon :'success'})
           clientInfo.close();
         } else {
@@ -335,7 +338,7 @@ app.post("/registeruser", async (req, res) => {
   })
 
 
-app.get('/yourorders/:id', async (req, res) => {
+app.get('/yourorders/:id', [auth],async (req, res) => {
   try {
       let clientInfo = await mongoClient.connect(dbURL)
       let db = clientInfo.db('Pizza_Users')
@@ -344,7 +347,6 @@ app.get('/yourorders/:id', async (req, res) => {
       })
       if (result) {
           res.status(200).json(result)
-          console.log(result);
           clientInfo.close()
       } else {
         res.status(400).json({message: "No data found",icon:'warning'});
@@ -353,8 +355,7 @@ app.get('/yourorders/:id', async (req, res) => {
       console.log(error)
   }
 })
-
-app.post('/makeorder/:id',async (req,res)=>{
+app.post('/makeorder/:id',[auth],async (req,res)=>{
   try{
     let clientInfo = await mongoClient.connect(dbURL)
       let db = clientInfo.db('Pizza_Users')
@@ -364,7 +365,7 @@ app.post('/makeorder/:id',async (req,res)=>{
       if(result){
       await db.collection("Customer").updateOne({
         _id: objectId(req.params.id)},
-        {$push:{orders:{_id:new ObjectID(),orderItems:req.body}}})
+        {$push:{orders:{orderid:newObjectId,orderitems:req.body}}})
       }
       res.status(200).json({message: "Added successfully" ,icon :'success'});
     }
@@ -373,24 +374,98 @@ app.post('/makeorder/:id',async (req,res)=>{
     }
 })
 
-app.put('/update/:id/:orderid',async (req,res)=>{
+app.put('/update/:id/:orderid?',async (req,res)=>{
   try{
     let clientInfo = await mongoClient.connect(dbURL)
       let db = clientInfo.db('Pizza_Users')
       let result = await db.collection('Customer').findOne({
         _id: objectId(req.params.id)
     })
-      if(result.data.orders._id==objectId(req.params.orderid)){
+    if(result){
       await db.collection("Customer").updateOne({
         _id: objectId(req.params.id)},
-        {$pull:{orders:{_id:objectId(req.params.orderid)}}
-      })
+        {$pull:{orders:{orderid:objectId(req.params.orderid),orderitems:req.body}}},
+      {multi:true})
       res.status(200).json({message: "Deleted successfully" ,icon :'success'});
-  }
+}else{
+  res.status(400).json({message: "Something went wrong",icon:'warning'});
+}
 }
 catch(error){
   console.log(error);
 }
 })
+
+app.post("/order", (req, res) => {
+  try {
+    const options = {
+      amount: 525 * 100, // amount == Rs 10
+      currency: "INR",
+      receipt: "receipt#1",
+      payment_capture: 0,
+ // 1 for automatic capture // 0 for manual capture
+    };
+  instance.orders.create(options, async function (err, order) {
+    if (err) {
+      return res.status(500).json({
+        message: "Something Went Wrong",
+      });
+    }
+  return res.status(200).json(order);
+ });
+} catch (err) {
+  return res.status(500).json({
+    message: "Something Went Wrong",
+  });
+ }
+});
+
+app.post("/capture/:paymentId", (req, res) => {
+  try {
+    return request(
+     {
+     method: "POST",
+     url: `https://${process.env.RAZOR_PAY_KEY_ID}:${process.env.RAZOR_PAY_KEY_SECRET}@api.razorpay.com/v1/payments/${req.params.paymentId}/capture`,
+     form: {
+        amount: 525 * 100, // amount == Rs 10 // Same As Order amount
+        currency: "INR",
+      },
+    },
+   async function (err, response, body) {
+     if (err) {
+      return res.status(500).json({
+         message: "Something Went Wrong",
+       }); 
+     }
+      console.log("Status:", response.statusCode);
+      console.log("Headers:", JSON.stringify(response.headers));
+      console.log("Response:", body);
+      return res.status(200).json(body);
+    });
+  } catch (err) {
+    return res.status(500).json({
+      message: "Something Went Wrong",
+   });
+  }
+});
+
+app.get('/orderpanel', async (req, res) => {
+  try {
+      let clientInfo = await mongoClient.connect(dbURL)
+      let db = clientInfo.db('Pizza_Users')
+      let array=[]
+      let result = await db.collection('Customer').find().forEach(function(user) {user.orders.forEach((e)=>{array.push(e.orderitems)}) })
+      if (array) {
+        res.send(array)
+        console.log(array);
+        clientInfo.close()
+      } else {
+        res.status(400).json({message: "No data found",icon:'warning'});
+      }
+  } catch (error) {
+      console.log(error)
+  }
+})
+
 
 app.listen(port, () => console.log("your app runs with port:",port));
