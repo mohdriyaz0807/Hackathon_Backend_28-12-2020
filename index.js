@@ -1,9 +1,4 @@
 const cors = require('cors')
-const corsOptions ={
-    origin:'https://pizza-apps-frontend.netlify.app', 
-    credentials:true,            //access-control-allow-credentials:true
-    optionSuccessStatus:200
-}
 const express = require("express");
 const mongodb = require("mongodb");
 const nodemailer = require("nodemailer")
@@ -23,7 +18,7 @@ const newObjectId = mongodb.ObjectID()
 const app = express();
 const dbURL = process.env.DB_URL ||"mongodb://127.0.0.1:27017";
 const port = process.env.PORT || 4000
-app.use(cors(corsOptions))
+app.use(cors())
 app.use(express.json());
 
 const instance = new Razorpay({
