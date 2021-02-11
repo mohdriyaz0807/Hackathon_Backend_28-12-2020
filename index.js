@@ -20,11 +20,6 @@ const newObjectId = mongodb.ObjectID()
 const dbURL = process.env.DB_URL ||"mongodb://127.0.0.1:27017";
 const port = process.env.PORT || 4000
 
-const instance = new Razorpay({
-  key_id: process.env.RAZOR_PAY_KEY_ID,
-  key_secret: process.env.RAZOR_PAY_KEY_SECRET,
-});
-
 app.post("/registeruser", async (req, res) => {
     try {
       let clientInfo = await mongoClient.connect(dbURL);
@@ -397,6 +392,12 @@ catch(error){
 
 
 app.get("/order", (req, res) => {
+
+  const instance = new Razorpay({
+    key_id: process.env.RAZOR_PAY_KEY_ID,
+    key_secret: process.env.RAZOR_PAY_KEY_SECRET,
+  })
+  
   try {
     const options = {
       amount: 250 * 100, // amount == Rs 10
