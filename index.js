@@ -351,7 +351,7 @@ app.get('/yourorders/:id', [auth],async (req, res) => {
       console.log(error)
   }
 })
-app.post('/makeorder/:id',[auth],async (req,res)=>{
+app.post('/makeorder/:id',async (req,res)=>{
   try{
     let clientInfo = await mongoClient.connect(dbURL)
       let db = clientInfo.db('Pizza_Users')
@@ -400,7 +400,7 @@ app.get("/order", (req, res) => {
     });
     
     const options = {
-      amount: 525 * 100, // amount == Rs 10
+      amount: 250 * 100, // amount == Rs 10
       currency: "INR",
       receipt: "receipt#1",
       payment_capture: 0,
@@ -428,7 +428,7 @@ app.post("/capture/:paymentId", (req, res) => {
      method: "POST",
      url: `https://${process.env.RAZOR_PAY_KEY_ID}:${process.env.RAZOR_PAY_KEY_SECRET}@api.razorpay.com/v1/payments/${req.params.paymentId}/capture`,
      form: {
-        amount: 525 * 100, // amount == Rs 10 // Same As Order amount
+        amount: 250 * 100, // amount == Rs 10 // Same As Order amount
         currency: "INR",
       },
     },
