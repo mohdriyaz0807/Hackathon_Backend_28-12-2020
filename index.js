@@ -1,31 +1,24 @@
-const cors = require('cors')
-const express = require("express");
+const express = require('express')
+const bodyParser = require('body-parser')
+require("dotenv").config();
 const mongodb = require("mongodb");
+const cors = require("cors");
+const bcrypt = require("bcrypt");
+var jwt = require('jsonwebtoken');
 const nodemailer = require("nodemailer")
-const bcrypt=require('bcrypt')
-const jwt = require('jsonwebtoken')
 const auth = require('./middleware/token')
 const Razorpay = require('razorpay');
 
-
-require('dotenv').config() 
+const app = express();
+app.use(cors());
+app.use(bodyParser.json());
 
 const mongoClient = mongodb.MongoClient;
 const objectId = mongodb.ObjectID
 const newObjectId = mongodb.ObjectID()
 
-
-const app = express();
 const dbURL = process.env.DB_URL ||"mongodb://127.0.0.1:27017";
 const port = process.env.PORT || 4000
-// app.use(express.json());
-app.use(function (req,res,next){
-  res.header("Access-Control-Allow-Origin","http://localhost:3000");
-  res.header("Access-Control-Allow-Headers","Origin,X-Requeted-With,Content-Type,Accept");
-  res.header("Access-Control-Allow-Methods","GET,POST,OPTIONS,PUT,DELETE");
-  res.header("Access-Control-Allow-Credentials",true)
-  next()
-})
 
 
 
