@@ -393,12 +393,12 @@ catch(error){
 
 app.get("/order", (req, res) => {
 
+  try {
   const instance = new Razorpay({
     key_id: process.env.RAZOR_PAY_KEY_ID,
     key_secret: process.env.RAZOR_PAY_KEY_SECRET,
   })
   
-  try {
     const options = {
       amount: 250 * 100, // amount == Rs 10
       currency: "INR",
