@@ -332,7 +332,7 @@ app.post("/registeruser", async (req, res) => {
   })
 
 
-app.get('/yourorders/:id', [auth],async (req, res) => {
+app.get('/orders/:id', [auth],async (req, res) => {
   try {
       let clientInfo = await mongoClient.connect(dbURL)
       let db = clientInfo.db('Pizza_Users')
@@ -340,7 +340,7 @@ app.get('/yourorders/:id', [auth],async (req, res) => {
           _id: objectId(req.params.id)
       })
       if (result) {
-          res.status(200).json(result)
+          res.status(200).json({orders:result.orders, status:200})
           clientInfo.close()
       } else {
         res.status(400).json({message: "No data found",icon:'warning'});
@@ -349,7 +349,8 @@ app.get('/yourorders/:id', [auth],async (req, res) => {
       console.log(error)
   }
 })
-app.post('/makeorder/:id',async (req,res)=>{
+
+app.post('/orders/:id',[auth],async (req,res)=>{
   try{
     let clientInfo = await mongoClient.connect(dbURL)
       let db = clientInfo.db('Pizza_Users')
@@ -359,7 +360,7 @@ app.post('/makeorder/:id',async (req,res)=>{
       if(result){
       await db.collection("Customer").updateOne({
         _id: objectId(req.params.id)},
-        {$push:{orders:{orderid:newObjectId,orderitems:req.body}}})
+        {$push:{orders:{orderid:newObjectId,...req.body}}})
       }
       res.status(200).json({message: "Added successfully" ,icon :'success'});
     }
